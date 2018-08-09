@@ -3,10 +3,18 @@ package topicos2.projeto.demo.service;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import topicos2.projeto.demo.model.Album;
 import topicos2.projeto.demo.model.Artista;
+import topicos2.projeto.demo.repository.AlbumRepository;
 import topicos2.projeto.demo.repository.ArtistaRepository;
 import org.springframework.transaction.annotation.Transactional;
+import topicos2.projeto.demo.repository.filter.ArtistaFiltro;
+import topicos2.projeto.demo.repository.filter.artista.ArtistaRepositoryQuery;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,44 +22,61 @@ import java.util.Optional;
 public class ArtistaService {
 
     private final ArtistaRepository artistaRepository;
+    private final ArtistaRepositoryQuery artistaRepositoryQuery;
+    private final AlbumRepository albumRepository;
 
-    @Autowired
-    public ArtistaService(ArtistaRepository artistaRepository) {
+    private final GenericoService<Artista> genericoService;
+
+@Autowired
+    public ArtistaService(ArtistaRepository artistaRepository, AlbumRepository albumRepository, ArtistaRepositoryQuery artistaRepositoryQuery) {
         this.artistaRepository = artistaRepository;
-    }
+        this.albumRepository = albumRepository;
+        this.artistaRepositoryQuery = artistaRepositoryQuery;
+        this.genericoService = new GenericoService<Artista>(artistaRepository);
 
-    Optional<Artista> buscaPor(String nome){
-        return Optional.ofNullable((artistaRepository.findByNome(nome)));
-    }
-    public Artista buscaPor(Integer id){
-        Optional<Artista> optionalArtista = artistaRepository.findById(id);
-        return optionalArtista.orElseThrow( () -> new EmptyResultDataAccessException(1));
-    }
+}
 
     @Transactional
-    public Artista salva(Artista artista){
-        return this.artistaRepository.save(artista);
+    public Artista salva(Artista artista) {
+        return genericoService.salva(artista);
     }
 
     @Transactional(readOnly = true)
-    public List<Artista> obterTodosArtistas(){
-        return artistaRepository.findAll();
+    public List<Artista> todos() {
+        return genericoService.buscaTodasAsEntities();
+    }
+
+    public Artista buscaPor(Integer id) {
+        return genericoService.buscaPor(id);
+    }
+
+    public List<Artista> buscaPor(String nome) {
+        return
+                artistaRepository.findByNomeContaining(nome )
+                        .orElse(new ArrayList<>() );
     }
 
     @Transactional
-    public void excluir(Integer id){
-        artistaRepository.deleteById(id);
+    public Artista atualiza(Integer id, Artista artista) {
+        return genericoService.atualiza(artista, id);
     }
 
     @Transactional
-    public Artista atualiza(Integer id, Artista artista){
-        Artista artistaManager = this.buscaPor(id);
+    public void excluir(Integer id) {
+        genericoService.excluir(id);
+    }
 
-        if(artistaManager == null){
-            throw new EmptyResultDataAccessException(1);
-        }
-        BeanUtils.copyProperties(artista, artistaManager, "id");
-        this.salva(artistaManager);
-        return artistaManager;
+    public Page<Artista> buscaPaginada(Pageable pageable) {
+        return artistaRepository.findAll(pageable );
+    }
+
+    public List<Artista> pesquisa(ArtistaFiltro filtro) {
+
+        return artistaRepositoryQuery.filtrar(filtro );
+    }
+
+    public Page<Artista> pesquisa(ArtistaFiltro filtro, Pageable pageable) {
+        return artistaRepositoryQuery.filtrar(filtro, pageable );
+
     }
 }

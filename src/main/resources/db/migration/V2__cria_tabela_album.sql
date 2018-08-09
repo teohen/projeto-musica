@@ -1,8 +1,8 @@
-CREATE TABLE artista (
+CREATE TABLE IF NOT EXISTS album(
   id INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(100) NOT NULL,
-  nacionalidade VARCHAR(100) NULL,
+  ano INT NOT NULL,
   PRIMARY KEY (id)
 ) engine=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO artista (nome) VALUES ('Chico Buarque');
+INSERT INTO album (nome, ano) VALUES ('Chico Buarque', 1981);
